@@ -1,31 +1,41 @@
 {
-  "name": "kanban-cdk",
-  "version": "0.1.0",
-  "bin": {
-    "kanban-cdk": "bin/kanban-cdk.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
-    "test": "jest",
-    "cdk": "cdk"
-  },
-  "dependencies": {
-    "@aws-sdk/lib-dynamodb": "^3.896.0",
-    "aws-cdk-lib": "2.202.0",
-    "aws-lambda": "^1.0.7",
-    "constructs": "^10.0.0",
-    "uuid": "^13.0.0",
-    "zod": "^4.1.11"
-  },
-  "devDependencies": {
-    "@types/aws-lambda": "^8.10.152",
-    "@types/jest": "^29.5.14",
-    "@types/node": "22.7.9",
-    "aws-cdk": "2.1020.2",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
-    "ts-node": "^10.9.2",
-    "typescript": "~5.6.3"
-  }
+    "name": "kanban-cdk",
+    "version": "0.1.0",
+    "bin": {
+        "kanban-cdk": "bin/kanban-cdk.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc -w",
+        "test": "jest",
+        "cdk": "cdk",
+        "lint": "eslint .",
+        "prettier:write": "prettier --write .",
+        "prettier:check": "prettier --write ."
+    },
+    "dependencies": {
+        "@aws-sdk/lib-dynamodb": "^3.896.0",
+        "aws-cdk-lib": "2.202.0",
+        "aws-lambda": "^1.0.7",
+        "constructs": "^10.0.0",
+        "uuid": "^13.0.0",
+        "zod": "^4.1.11"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.36.0",
+        "@types/aws-lambda": "^8.10.152",
+        "@types/jest": "^29.5.14",
+        "@types/node": "22.7.9",
+        "aws-cdk": "2.1020.2",
+        "eslint": "^9.36.0",
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^16.4.0",
+        "jest": "^29.7.0",
+        "jiti": "^2.6.0",
+        "prettier": "^3.6.2",
+        "ts-jest": "^29.2.5",
+        "ts-node": "^10.9.2",
+        "typescript": "~5.6.3",
+        "typescript-eslint": "^8.44.1"
+    }
 }
