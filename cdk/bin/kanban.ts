@@ -7,7 +7,7 @@ const app = new cdk.App();
 const stack = new KanbanStack(app, 'KanbanStack', {
     env: {
         account: process.env.CDK_DEFAULT_ACCOUNT,
-        region: process.env.CDK_DEFAULT_REGION || 'eu-central-1',
+        region: process.env.CDK_DEFAULT_REGION,
     },
     description: 'Serverless Kanban Board Application Stack',
 });

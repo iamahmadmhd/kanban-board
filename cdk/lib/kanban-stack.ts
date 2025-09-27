@@ -21,7 +21,9 @@ export class KanbanStack extends cdk.Stack {
             },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: cdk.RemovalPolicy.DESTROY, // For development
-            pointInTimeRecovery: false, // Keep costs down
+            pointInTimeRecoverySpecification: {
+                pointInTimeRecoveryEnabled: false, // Keep costs down
+            },
             encryption: dynamodb.TableEncryption.AWS_MANAGED,
         });
 
