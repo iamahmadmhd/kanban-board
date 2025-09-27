@@ -7,5 +7,10 @@ node_modules
 .cdk.staging
 cdk.out
 
+# SAM
+.aws-sam
+
 # ENV
 .env*
+env.*
+!*.example

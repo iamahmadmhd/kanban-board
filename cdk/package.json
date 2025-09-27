@@ -14,6 +14,7 @@
         "prettier:check": "prettier --write ."
     },
     "dependencies": {
+        "@aws-sdk/client-dynamodb": "^3.896.0",
         "@aws-sdk/lib-dynamodb": "^3.896.0",
         "aws-cdk-lib": "2.202.0",
         "aws-lambda": "^1.0.7",
@@ -27,6 +28,7 @@
         "@types/jest": "^29.5.14",
         "@types/node": "22.7.9",
         "aws-cdk": "2.1020.2",
+        "esbuild": "^0.25.10",
         "eslint": "^9.36.0",
         "eslint-config-prettier": "^10.1.8",
         "globals": "^16.4.0",
