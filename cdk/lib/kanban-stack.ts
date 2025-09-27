@@ -2,10 +2,12 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { KanbanDynamoDB } from './constructs/dynamodb';
 import { KanbanCognito } from './constructs/cognito';
+import { KanbanApi } from './constructs/api';
 
 export class KanbanStack extends cdk.Stack {
     public readonly database: KanbanDynamoDB;
     public readonly auth: KanbanCognito;
+    public readonly api: KanbanApi;
 
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
@@ -21,6 +23,13 @@ export class KanbanStack extends cdk.Stack {
             userPoolName: 'kanban-user-pool',
             clientName: 'kanban-web-client',
             removalPolicy: cdk.RemovalPolicy.DESTROY, // For development
+        });
+
+        // API Gateway with Lambda functions
+        this.api = new KanbanApi(this, 'Api', {
+            table: this.database.table,
+            userPool: this.auth.userPool,
+            apiName: 'kanban-api',
         });
 
         // Stack outputs for frontend integration
@@ -52,6 +61,12 @@ export class KanbanStack extends cdk.Stack {
             value: `${this.auth.userPool.userPoolId}.auth.${this.region}.amazoncognito.com`,
             description: 'Cognito User Pool Domain',
             exportName: `${this.stackName}-UserPoolDomain`,
+        });
+
+        new cdk.CfnOutput(this, 'ApiUrl', {
+            value: this.api.api.url,
+            description: 'API Gateway URL',
+            exportName: `${this.stackName}-ApiUrl`,
         });
     }
 }

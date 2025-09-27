@@ -57,7 +57,7 @@ export class AuthUtils {
 
         const claims = authorizer.jwt.claims;
 
-        if (!claims.sub) {
+        if (!claims?.sub) {
             throw new Error('Invalid JWT claims - missing sub');
         }
 

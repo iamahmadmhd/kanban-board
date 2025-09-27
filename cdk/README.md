@@ -1,14 +1,22 @@
-# Welcome to your CDK TypeScript project
+# Kanban Board CDK Infrastructure
 
-This is a blank project for CDK development with TypeScript.
+## Build and deploy API
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+npm run build
+npx cdk deploy --require-approval never
 
-## Useful commands
+## Test API locally with SAM
 
-- `npm run build` compile typescript to js
-- `npm run watch` watch for changes and compile
-- `npm run test` perform the jest unit tests
-- `npx cdk deploy` deploy this stack to your default AWS account/region
-- `npx cdk diff` compare deployed stack with current state
-- `npx cdk synth` emits the synthesized CloudFormation template
+npx cdk synth
+sam local start-api --template-file cdk.out/KanbanStack.template.json
+
+## Local development with DynamoDB Local
+
+docker run -p 8000:8000 amazon/dynamodb-local
+export LOCAL_DYNAMODB=true
+export LOCAL_AUTH=true
+
+## Test API endpoints
+
+curl -H "X-Local-User: testuser" http://localhost:3000/boards
+curl -H "X-Local-User: testuser" -X POST -d '{"title":"My Board"}' http://localhost:3000/boards
