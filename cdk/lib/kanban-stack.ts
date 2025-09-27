@@ -1,57 +1,57 @@
 import * as cdk from 'aws-cdk-lib';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
+import { KanbanDynamoDB } from './constructs/dynamodb';
+import { KanbanCognito } from './constructs/cognito';
 
 export class KanbanStack extends cdk.Stack {
-    public readonly table: dynamodb.Table;
+    public readonly database: KanbanDynamoDB;
+    public readonly auth: KanbanCognito;
 
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        // DynamoDB table with single-table design
-        this.table = new dynamodb.Table(this, 'KanbanTable', {
+        // Database infrastructure
+        this.database = new KanbanDynamoDB(this, 'Database', {
             tableName: 'KanbanTable',
-            partitionKey: {
-                name: 'PK',
-                type: dynamodb.AttributeType.STRING,
-            },
-            sortKey: {
-                name: 'SK',
-                type: dynamodb.AttributeType.STRING,
-            },
-            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: cdk.RemovalPolicy.DESTROY, // For development
-            pointInTimeRecoverySpecification: {
-                pointInTimeRecoveryEnabled: false, // Keep costs down
-            },
-            encryption: dynamodb.TableEncryption.AWS_MANAGED,
         });
 
-        // GSI for querying boards by user
-        this.table.addGlobalSecondaryIndex({
-            indexName: 'GSI1',
-            partitionKey: {
-                name: 'GSI1PK',
-                type: dynamodb.AttributeType.STRING,
-            },
-            sortKey: {
-                name: 'GSI1SK',
-                type: dynamodb.AttributeType.STRING,
-            },
+        // Authentication infrastructure
+        this.auth = new KanbanCognito(this, 'Auth', {
+            userPoolName: 'kanban-user-pool',
+            clientName: 'kanban-web-client',
+            removalPolicy: cdk.RemovalPolicy.DESTROY, // For development
         });
 
-        // Output table name for frontend integration
+        // Stack outputs for frontend integration
         new cdk.CfnOutput(this, 'TableName', {
-            value: this.table.tableName,
+            value: this.database.table.tableName,
             description: 'DynamoDB table name',
-            exportName: 'KanbanTableName',
+            exportName: `${this.stackName}-TableName`,
         });
 
-        // Output table ARN for Lambda permissions
         new cdk.CfnOutput(this, 'TableArn', {
-            value: this.table.tableArn,
+            value: this.database.table.tableArn,
             description: 'DynamoDB table ARN',
-            exportName: 'KanbanTableArn',
+            exportName: `${this.stackName}-TableArn`,
+        });
+
+        new cdk.CfnOutput(this, 'UserPoolId', {
+            value: this.auth.userPool.userPoolId,
+            description: 'Cognito User Pool ID',
+            exportName: `${this.stackName}-UserPoolId`,
+        });
+
+        new cdk.CfnOutput(this, 'UserPoolClientId', {
+            value: this.auth.userPoolClient.userPoolClientId,
+            description: 'Cognito User Pool Client ID',
+            exportName: `${this.stackName}-UserPoolClientId`,
+        });
+
+        new cdk.CfnOutput(this, 'UserPoolDomain', {
+            value: `${this.auth.userPool.userPoolId}.auth.${this.region}.amazoncognito.com`,
+            description: 'Cognito User Pool Domain',
+            exportName: `${this.stackName}-UserPoolDomain`,
         });
     }
 }

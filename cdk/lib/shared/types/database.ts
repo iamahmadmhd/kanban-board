@@ -1,4 +1,4 @@
-// Shared type definitions for DynamoDB items
+// DynamoDB item types and utilities
 
 export interface BaseItem {
     PK: string;
@@ -42,3 +42,24 @@ export interface CardItem extends BaseItem {
 }
 
 export type KanbanItem = BoardItem | ListItem | CardItem;
+
+// Type guards
+export function isBoardItem(item: KanbanItem): item is BoardItem {
+    return item.itemType === 'BOARD';
+}
+
+export function isListItem(item: KanbanItem): item is ListItem {
+    return item.itemType === 'LIST';
+}
+
+export function isCardItem(item: KanbanItem): item is CardItem {
+    return item.itemType === 'CARD';
+}
+
+// Key generation utilities
+export const DatabaseKeys = {
+    user: (userId: string): `USER#${string}` => `USER#${userId}`,
+    board: (boardId: string): `BOARD#${string}` => `BOARD#${boardId}`,
+    list: (listId: string): `LIST#${string}` => `LIST#${listId}`,
+    card: (cardId: string): `CARD#${string}` => `CARD#${cardId}`,
+} as const;

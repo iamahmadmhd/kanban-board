@@ -6,12 +6,13 @@ import {
     QueryCommand,
     UpdateCommand,
     DeleteCommand,
-    UpdateCommandInput,
     QueryCommandInput,
+    UpdateCommandInput,
+    NativeAttributeValue,
 } from '@aws-sdk/lib-dynamodb';
-import { KanbanItem } from '../models/types';
+import { KanbanItem } from '../types/database';
 
-export class DynamoDB {
+export class DatabaseClient {
     private readonly docClient: DynamoDBDocumentClient;
     private readonly tableName: string;
 
@@ -19,7 +20,7 @@ export class DynamoDB {
         const dynamoClient =
             client ||
             new DynamoDBClient({
-                region: process.env.AWS_REGION || 'eu-central-1',
+                region: process.env.AWS_REGION || 'us-east-1',
                 ...(process.env.LOCAL_DYNAMODB === 'true' && {
                     endpoint: 'http://localhost:8000',
                     credentials: {
@@ -33,7 +34,7 @@ export class DynamoDB {
         this.tableName = tableName;
     }
 
-    async getItem(pk: string, sk: string): Promise<KanbanItem | null> {
+    async get(pk: string, sk: string): Promise<KanbanItem | null> {
         try {
             const result = await this.docClient.send(
                 new GetCommand({
@@ -43,12 +44,12 @@ export class DynamoDB {
             );
             return (result.Item as KanbanItem) || null;
         } catch (error) {
-            console.error('Error getting item:', error);
+            console.error('Database get error:', error);
             throw new Error('Failed to retrieve item from database');
         }
     }
 
-    async putItem(item: KanbanItem): Promise<void> {
+    async put(item: KanbanItem): Promise<void> {
         try {
             await this.docClient.send(
                 new PutCommand({
@@ -57,12 +58,12 @@ export class DynamoDB {
                 })
             );
         } catch (error) {
-            console.error('Error putting item:', error);
+            console.error('Database put error:', error);
             throw new Error('Failed to save item to database');
         }
     }
 
-    async queryItems(pk: string, skBeginsWith?: string): Promise<KanbanItem[]> {
+    async query(pk: string, skPrefix?: string): Promise<KanbanItem[]> {
         try {
             const params: QueryCommandInput = {
                 TableName: this.tableName,
@@ -72,24 +73,24 @@ export class DynamoDB {
                 },
             };
 
-            if (skBeginsWith) {
+            if (skPrefix) {
                 params.KeyConditionExpression += ' AND begins_with(SK, :sk)';
-                params.ExpressionAttributeValues![':sk'] = skBeginsWith;
+                params.ExpressionAttributeValues![':sk'] = skPrefix;
             }
 
             const result = await this.docClient.send(new QueryCommand(params));
             return (result.Items as KanbanItem[]) || [];
         } catch (error) {
-            console.error('Error querying items:', error);
+            console.error('Database query error:', error);
             throw new Error('Failed to query items from database');
         }
     }
 
-    async updateItem(
+    async update(
         pk: string,
         sk: string,
         updateExpression: string,
-        expressionAttributeValues: Record<string, UpdateCommandInput>,
+        expressionAttributeValues: Record<string, NativeAttributeValue>,
         expressionAttributeNames?: Record<string, string>
     ): Promise<KanbanItem> {
         try {
@@ -102,18 +103,18 @@ export class DynamoDB {
             };
 
             if (expressionAttributeNames) {
-                params.ExpressionAttributeValues = expressionAttributeNames;
+                params.ExpressionAttributeNames = expressionAttributeNames;
             }
 
             const result = await this.docClient.send(new UpdateCommand(params));
             return result.Attributes as KanbanItem;
         } catch (error) {
-            console.error('Error updating item:', error);
+            console.error('Database update error:', error);
             throw new Error('Failed to update item in database');
         }
     }
 
-    async deleteItem(pk: string, sk: string): Promise<void> {
+    async delete(pk: string, sk: string): Promise<void> {
         try {
             await this.docClient.send(
                 new DeleteCommand({
@@ -122,7 +123,7 @@ export class DynamoDB {
                 })
             );
         } catch (error) {
-            console.error('Error deleting item:', error);
+            console.error('Database delete error:', error);
             throw new Error('Failed to delete item from database');
         }
     }
