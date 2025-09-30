@@ -1,9 +1,9 @@
-import { APIGatewayProxyResultV2 } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { DatabaseClient } from '../../shared/utils/database';
+import DatabaseClient from '../../shared/utils/database';
 import { ApiUtils } from '../../shared/utils/api';
-import { APIGatewayEventWithAuth, UserContext } from '../../shared/types/auth';
+import { UserContext } from '../../shared/types/auth';
 import { CreateCardRequest, UpdateCardRequest, cardToResponse, HttpStatusCode } from '../../shared/types/api';
 import { CardItem, DatabaseKeys } from '../../shared/types/database';
 import { NativeAttributeValue } from '@aws-sdk/lib-dynamodb';
@@ -26,8 +26,8 @@ const updateCardSchema = z.object({
 });
 
 export const handler = ApiUtils.withErrorHandling(
-    async (event: APIGatewayEventWithAuth, userContext: UserContext): Promise<APIGatewayProxyResultV2> => {
-        const method = event.requestContext.http.method;
+    async (event: APIGatewayProxyEvent, userContext: UserContext): Promise<APIGatewayProxyResult> => {
+        const method = event.requestContext.httpMethod;
         const boardId = ApiUtils.getPathParameter(event, 'boardId');
         const listId = ApiUtils.getPathParameter(event, 'listId');
         const cardId = ApiUtils.getPathParameter(event, 'cardId');
@@ -90,7 +90,7 @@ async function verifyListExists(boardId: string, listId: string): Promise<void> 
     }
 }
 
-async function getCards(listId: string): Promise<APIGatewayProxyResultV2> {
+async function getCards(listId: string): Promise<APIGatewayProxyResult> {
     const listKey = DatabaseKeys.list(listId);
     const cards = await dbClient.query(listKey, 'CARD#');
 
@@ -102,10 +102,10 @@ async function getCards(listId: string): Promise<APIGatewayProxyResultV2> {
 }
 
 async function createCard(
-    event: APIGatewayEventWithAuth,
+    event: APIGatewayProxyEvent,
     userContext: UserContext,
     listId: string
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const body = ApiUtils.parseBody<CreateCardRequest>(event.body);
 
     if (!body) {
@@ -146,11 +146,11 @@ async function createCard(
 }
 
 async function updateCard(
-    event: APIGatewayEventWithAuth,
+    event: APIGatewayProxyEvent,
     userContext: UserContext,
     listId: string,
     cardId: string
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const body = ApiUtils.parseBody<UpdateCardRequest>(event.body);
 
     if (!body) {
@@ -222,7 +222,7 @@ async function moveCard(
     existingCard: CardItem,
     newListId: string,
     updateData: UpdateCardRequest
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const oldListKey = existingCard.PK;
     const cardKey = existingCard.SK;
     const newListKey = DatabaseKeys.list(newListId);
@@ -251,7 +251,7 @@ async function deleteCard(
     userContext: UserContext,
     listId: string,
     cardId: string
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const listKey = DatabaseKeys.list(listId);
     const cardKey = DatabaseKeys.card(cardId);
 

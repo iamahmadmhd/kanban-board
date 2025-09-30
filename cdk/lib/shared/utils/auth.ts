@@ -1,11 +1,12 @@
-import { UserContext, APIGatewayEventWithAuth, LocalAuthHeaders, LocalUserData } from '../types/auth';
+import { APIGatewayProxyEvent } from 'aws-lambda';
+import { UserContext, LocalAuthHeaders, LocalUserData } from '../types/auth';
 
 export class AuthUtils {
     /**
      * Extract user context from API Gateway event
      * Supports both Cognito JWT and local development auth
      */
-    static extractUserContext(event: APIGatewayEventWithAuth): UserContext {
+    static extractUserContext(event: APIGatewayProxyEvent): UserContext {
         // Check for local development mode
         if (process.env.LOCAL_AUTH === 'true') {
             return this.extractLocalUser(event);
@@ -15,7 +16,7 @@ export class AuthUtils {
         return this.extractCognitoUser(event);
     }
 
-    private static extractLocalUser(event: APIGatewayEventWithAuth): UserContext {
+    private static extractLocalUser(event: APIGatewayProxyEvent): UserContext {
         const headers = event.headers as LocalAuthHeaders;
         const localUser = headers['X-Local-User'] || headers['x-local-user'];
 
@@ -48,7 +49,7 @@ export class AuthUtils {
         };
     }
 
-    private static extractCognitoUser(event: APIGatewayEventWithAuth): UserContext {
+    private static extractCognitoUser(event: APIGatewayProxyEvent): UserContext {
         const authorizer = event.requestContext.authorizer;
 
         if (!authorizer || !authorizer.jwt) {

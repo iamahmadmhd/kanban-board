@@ -1,9 +1,9 @@
-import { APIGatewayProxyResultV2 } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { DatabaseClient } from '../../shared/utils/database';
+import DatabaseClient from '../../shared/utils/database';
 import { ApiUtils } from '../../shared/utils/api';
-import { APIGatewayEventWithAuth, UserContext } from '../../shared/types/auth';
+import { UserContext } from '../../shared/types/auth';
 import {
     CreateBoardRequest,
     UpdateBoardRequest,
@@ -27,8 +27,8 @@ const updateBoardSchema = z.object({
 });
 
 export const handler = ApiUtils.withErrorHandling(
-    async (event: APIGatewayEventWithAuth, userContext: UserContext): Promise<APIGatewayProxyResultV2> => {
-        const method = event.requestContext.http.method;
+    async (event: APIGatewayProxyEvent, userContext: UserContext): Promise<APIGatewayProxyResult> => {
+        const method = event.requestContext.httpMethod;
         const boardId = ApiUtils.getPathParameter(event, 'boardId');
 
         switch (method) {
@@ -60,7 +60,7 @@ export const handler = ApiUtils.withErrorHandling(
     }
 );
 
-async function listBoards(userContext: UserContext): Promise<APIGatewayProxyResultV2> {
+async function listBoards(userContext: UserContext): Promise<APIGatewayProxyResult> {
     const userKey = DatabaseKeys.user(userContext.userId);
     const boards = await dbClient.query(userKey, 'BOARD#');
 
@@ -69,7 +69,7 @@ async function listBoards(userContext: UserContext): Promise<APIGatewayProxyResu
     return ApiUtils.success(boardResponses);
 }
 
-async function getBoard(userContext: UserContext, boardId: string): Promise<APIGatewayProxyResultV2> {
+async function getBoard(userContext: UserContext, boardId: string): Promise<APIGatewayProxyResult> {
     const userKey = DatabaseKeys.user(userContext.userId);
     const boardKey = DatabaseKeys.board(boardId);
 
@@ -83,9 +83,9 @@ async function getBoard(userContext: UserContext, boardId: string): Promise<APIG
 }
 
 async function createBoard(
-    event: APIGatewayEventWithAuth,
+    event: APIGatewayProxyEvent,
     userContext: UserContext
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const body = ApiUtils.parseBody<CreateBoardRequest>(event.body);
 
     if (!body) {
@@ -120,10 +120,10 @@ async function createBoard(
 }
 
 async function updateBoard(
-    event: APIGatewayEventWithAuth,
+    event: APIGatewayProxyEvent,
     userContext: UserContext,
     boardId: string
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const body = ApiUtils.parseBody<UpdateBoardRequest>(event.body);
 
     if (!body) {
@@ -174,7 +174,7 @@ async function updateBoard(
     return ApiUtils.success(boardToResponse(updatedBoard as BoardItem));
 }
 
-async function deleteBoard(userContext: UserContext, boardId: string): Promise<APIGatewayProxyResultV2> {
+async function deleteBoard(userContext: UserContext, boardId: string): Promise<APIGatewayProxyResult> {
     const userKey = DatabaseKeys.user(userContext.userId);
     const boardKey = DatabaseKeys.board(boardId);
 

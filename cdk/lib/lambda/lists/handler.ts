@@ -1,9 +1,9 @@
-import { APIGatewayProxyResultV2 } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { DatabaseClient } from '../../shared/utils/database';
+import DatabaseClient from '../../shared/utils/database';
 import { ApiUtils } from '../../shared/utils/api';
-import { APIGatewayEventWithAuth, UserContext } from '../../shared/types/auth';
+import { UserContext } from '../../shared/types/auth';
 import { CreateListRequest, UpdateListRequest, listToResponse, HttpStatusCode } from '../../shared/types/api';
 import { ListItem, DatabaseKeys } from '../../shared/types/database';
 import { NativeAttributeValue } from '@aws-sdk/lib-dynamodb';
@@ -22,8 +22,8 @@ const updateListSchema = z.object({
 });
 
 export const handler = ApiUtils.withErrorHandling(
-    async (event: APIGatewayEventWithAuth, userContext: UserContext): Promise<APIGatewayProxyResultV2> => {
-        const method = event.requestContext.http.method;
+    async (event: APIGatewayProxyEvent, userContext: UserContext): Promise<APIGatewayProxyResult> => {
+        const method = event.requestContext.httpMethod;
         const boardId = ApiUtils.getPathParameter(event, 'boardId');
         const listId = ApiUtils.getPathParameter(event, 'listId');
 
@@ -69,7 +69,7 @@ async function verifyBoardAccess(userContext: UserContext, boardId: string): Pro
     }
 }
 
-async function getLists(boardId: string): Promise<APIGatewayProxyResultV2> {
+async function getLists(boardId: string): Promise<APIGatewayProxyResult> {
     const boardKey = DatabaseKeys.board(boardId);
     const lists = await dbClient.query(boardKey, 'LIST#');
 
@@ -81,10 +81,10 @@ async function getLists(boardId: string): Promise<APIGatewayProxyResultV2> {
 }
 
 async function createList(
-    event: APIGatewayEventWithAuth,
+    event: APIGatewayProxyEvent,
     userContext: UserContext,
     boardId: string
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const body = ApiUtils.parseBody<CreateListRequest>(event.body);
 
     if (!body) {
@@ -123,11 +123,11 @@ async function createList(
 }
 
 async function updateList(
-    event: APIGatewayEventWithAuth,
+    event: APIGatewayProxyEvent,
     userContext: UserContext,
     boardId: string,
     listId: string
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const body = ApiUtils.parseBody<UpdateListRequest>(event.body);
 
     if (!body) {
@@ -182,7 +182,7 @@ async function deleteList(
     userContext: UserContext,
     boardId: string,
     listId: string
-): Promise<APIGatewayProxyResultV2> {
+): Promise<APIGatewayProxyResult> {
     const boardKey = DatabaseKeys.board(boardId);
     const listKey = DatabaseKeys.list(listId);
 

@@ -1,13 +1,13 @@
-import { APIGatewayProxyHandlerV2, APIGatewayProxyResultV2 } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { ApiResponse, HttpStatusCode, ValidationError } from '../types/api';
 import { AuthUtils } from './auth';
-import { APIGatewayEventWithAuth, UserContext } from '../types/auth';
+import { UserContext } from '../types/auth';
 
 export class ApiUtils {
     /**
      * Create a successful API response
      */
-    static success<T>(data: T, statusCode: number = HttpStatusCode.OK): APIGatewayProxyResultV2 {
+    static success<T>(data: T, statusCode: number = HttpStatusCode.OK): APIGatewayProxyResult {
         const response: ApiResponse<T> = {
             success: true,
             data,
@@ -32,7 +32,7 @@ export class ApiUtils {
         message: string,
         statusCode: number = HttpStatusCode.INTERNAL_SERVER_ERROR,
         code?: string
-    ): APIGatewayProxyResultV2 {
+    ): APIGatewayProxyResult {
         const response: ApiResponse = {
             success: false,
             error: {
@@ -56,7 +56,7 @@ export class ApiUtils {
     /**
      * Create a validation error response
      */
-    static validationError(errors: ValidationError[]): APIGatewayProxyResultV2 {
+    static validationError(errors: ValidationError[]): APIGatewayProxyResult {
         console.error('Validation errors:', errors);
         return this.error('Validation failed', HttpStatusCode.BAD_REQUEST, 'VALIDATION_ERROR');
     }
@@ -64,7 +64,7 @@ export class ApiUtils {
     /**
      * Parse JSON body safely
      */
-    static parseBody<T>(body: string | undefined): T | null {
+    static parseBody<T>(body?: string | null): T | null {
         if (!body) return null;
 
         try {
@@ -78,30 +78,42 @@ export class ApiUtils {
     /**
      * Extract path parameters safely
      */
-    static getPathParameter(event: APIGatewayEventWithAuth, name: string): string | null {
-        return event.pathParameters?.[name] || null;
+    static getPathParameter(event: APIGatewayProxyEvent, name: string): string | null {
+        return event.pathParameters?.[name] ?? null;
     }
 
     /**
      * Extract query parameters safely
      */
-    static getQueryParameter(event: APIGatewayEventWithAuth, name: string): string | null {
-        return event.queryStringParameters?.[name] || null;
+    static getQueryParameter(event: APIGatewayProxyEvent, name: string): string | null {
+        return event.queryStringParameters?.[name] ?? null;
+    }
+
+    /**
+     * Get HTTP method from event (supports both v1.0 and v2.0 formats)
+     */
+    static getHttpMethod(event: APIGatewayProxyEvent | APIGatewayProxyEvent): string {
+        // API Gateway v1.0 format
+        if (event.requestContext?.httpMethod) {
+            return event.requestContext.httpMethod;
+        }
+        // Fallback to httpMethod at root level (v1.0)
+        if (event.httpMethod) {
+            return event.httpMethod;
+        }
+        throw new Error('Unable to determine HTTP method from event');
     }
 
     /**
      * Wrapper for Lambda handlers with error handling and auth
      */
     static withErrorHandling(
-        handler: (
-            event: APIGatewayEventWithAuth,
-            userContext: UserContext
-        ) => Promise<APIGatewayProxyResultV2>
-    ): APIGatewayProxyHandlerV2 {
-        return async (event): Promise<APIGatewayProxyResultV2> => {
+        handler: (event: APIGatewayProxyEvent, userContext: UserContext) => Promise<APIGatewayProxyResult>
+    ): APIGatewayProxyHandler {
+        return async (event): Promise<APIGatewayProxyResult> => {
             try {
                 // Handle CORS preflight
-                if (event.requestContext.http.method === 'OPTIONS') {
+                if (event.requestContext.httpMethod === 'OPTIONS') {
                     return {
                         statusCode: 200,
                         headers: {
@@ -109,23 +121,22 @@ export class ApiUtils {
                             'Access-Control-Allow-Headers': 'Content-Type,Authorization',
                             'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
                         },
+                        body: '',
                     };
                 }
 
-                // Extract user context
-                const userContext = AuthUtils.extractUserContext(event as APIGatewayEventWithAuth);
+                // Extract user context (may throw if auth fails)
+                const userContext = AuthUtils.extractUserContext(event);
 
                 // Call the actual handler
-                return await handler(event as APIGatewayEventWithAuth, userContext);
+                return await handler(event, userContext);
             } catch (error) {
                 console.error('Lambda handler error:', error);
 
                 if (error instanceof Error) {
-                    // Handle specific error types
-                    if (
-                        error.message.includes('not authenticated') ||
-                        error.message.includes('Missing X-Local-User')
-                    ) {
+                    const msg = error.message.toLowerCase();
+
+                    if (msg.includes('not authenticated') || msg.includes('missing x-local-user')) {
                         return this.error(
                             'Authentication required',
                             HttpStatusCode.UNAUTHORIZED,
@@ -133,11 +144,11 @@ export class ApiUtils {
                         );
                     }
 
-                    if (error.message.includes('does not have access')) {
+                    if (msg.includes('does not have access') || msg.includes('access denied')) {
                         return this.error('Access denied', HttpStatusCode.FORBIDDEN, 'ACCESS_DENIED');
                     }
 
-                    if (error.message.includes('not found')) {
+                    if (msg.includes('not found') || msg.includes('notfound')) {
                         return this.error('Resource not found', HttpStatusCode.NOT_FOUND, 'NOT_FOUND');
                     }
                 }

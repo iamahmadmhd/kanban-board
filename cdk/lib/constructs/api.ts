@@ -36,15 +36,15 @@ export class KanbanApi extends Construct {
                 allowHeaders: ['Content-Type', 'Authorization'],
             },
             deployOptions: {
-                stageName: 'prod',
+                stageName: 'v1',
                 tracingEnabled: true,
             },
         });
 
         // Common Lambda environment variables
         const commonEnv = {
-            TABLE_NAME: props.table.tableName,
-            LOCAL_AUTH: 'false',
+            TABLE_NAME: process.env.TABLE_NAME!,
+            LOCAL_AUTH: process.env.LOCAL_AUTH!,
         };
 
         // Lambda execution role with DynamoDB permissions
@@ -62,13 +62,14 @@ export class KanbanApi extends Construct {
         const boardsLambda = new lambdaNodejs.NodejsFunction(this, 'BoardsFunction', {
             entry: path.join(__dirname, '../lambda/boards/handler.ts'),
             handler: 'handler',
-            runtime: lambda.Runtime.NODEJS_18_X,
+            runtime: lambda.Runtime.NODEJS_22_X,
             environment: commonEnv,
             role: lambdaRole,
             bundling: {
                 minify: true,
                 sourceMap: false,
                 target: 'es2022',
+                forceDockerBundling: false,
             },
         });
 
@@ -76,13 +77,14 @@ export class KanbanApi extends Construct {
         const listsLambda = new lambdaNodejs.NodejsFunction(this, 'ListsFunction', {
             entry: path.join(__dirname, '../lambda/lists/handler.ts'),
             handler: 'handler',
-            runtime: lambda.Runtime.NODEJS_18_X,
+            runtime: lambda.Runtime.NODEJS_22_X,
             environment: commonEnv,
             role: lambdaRole,
             bundling: {
                 minify: true,
                 sourceMap: false,
                 target: 'es2022',
+                forceDockerBundling: false,
             },
         });
 
@@ -90,13 +92,14 @@ export class KanbanApi extends Construct {
         const cardsLambda = new lambdaNodejs.NodejsFunction(this, 'CardsFunction', {
             entry: path.join(__dirname, '../lambda/cards/handler.ts'),
             handler: 'handler',
-            runtime: lambda.Runtime.NODEJS_18_X,
+            runtime: lambda.Runtime.NODEJS_22_X,
             environment: commonEnv,
             role: lambdaRole,
             bundling: {
                 minify: true,
                 sourceMap: false,
                 target: 'es2022',
+                forceDockerBundling: false,
             },
         });
 

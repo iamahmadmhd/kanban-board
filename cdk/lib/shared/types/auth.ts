@@ -1,18 +1,4 @@
 // Authentication types and interfaces
-import { APIGatewayProxyEventV2 } from 'aws-lambda';
-
-// Extended event type that includes JWT authorizer context
-export interface APIGatewayEventWithAuth extends APIGatewayProxyEventV2 {
-    requestContext: APIGatewayProxyEventV2['requestContext'] & {
-        authorizer?: {
-            jwt?: {
-                claims?: Record<string, unknown>;
-                scopes?: string[];
-            };
-        };
-    };
-    statusCode?: number;
-}
 
 // User context extracted from authentication
 export interface UserContext {

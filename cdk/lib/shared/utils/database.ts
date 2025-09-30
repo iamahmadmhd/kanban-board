@@ -12,29 +12,27 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { KanbanItem } from '../types/database';
 
-export class DatabaseClient {
+/**
+ * Generic DatabaseClient backed by DynamoDB DocumentClient.
+ */
+export default class DatabaseClient<TItem extends Record<string, NativeAttributeValue> = KanbanItem> {
     private readonly docClient: DynamoDBDocumentClient;
     private readonly tableName: string;
 
     constructor(tableName: string, client?: DynamoDBClient) {
+        if (!tableName) throw new Error('TABLE_NAME is required');
+
         const dynamoClient =
             client ||
             new DynamoDBClient({
-                region: process.env.AWS_REGION || 'us-east-1',
-                ...(process.env.LOCAL_DYNAMODB === 'true' && {
-                    endpoint: 'http://localhost:8000',
-                    credentials: {
-                        accessKeyId: 'local',
-                        secretAccessKey: 'local',
-                    },
-                }),
+                region: process.env.AWS_REGION,
             });
 
         this.docClient = DynamoDBDocumentClient.from(dynamoClient);
         this.tableName = tableName;
     }
 
-    async get(pk: string, sk: string): Promise<KanbanItem | null> {
+    async get(pk: string, sk: string): Promise<TItem | null> {
         try {
             const result = await this.docClient.send(
                 new GetCommand({
@@ -42,14 +40,14 @@ export class DatabaseClient {
                     Key: { PK: pk, SK: sk },
                 })
             );
-            return (result.Item as KanbanItem) || null;
+            return (result.Item as TItem) || null;
         } catch (error) {
             console.error('Database get error:', error);
             throw new Error('Failed to retrieve item from database');
         }
     }
 
-    async put(item: KanbanItem): Promise<void> {
+    async put(item: TItem): Promise<void> {
         try {
             await this.docClient.send(
                 new PutCommand({
@@ -63,7 +61,7 @@ export class DatabaseClient {
         }
     }
 
-    async query(pk: string, skPrefix?: string): Promise<KanbanItem[]> {
+    async query(pk: string, skPrefix?: string): Promise<TItem[]> {
         try {
             const params: QueryCommandInput = {
                 TableName: this.tableName,
@@ -79,7 +77,7 @@ export class DatabaseClient {
             }
 
             const result = await this.docClient.send(new QueryCommand(params));
-            return (result.Items as KanbanItem[]) || [];
+            return (result.Items as TItem[]) || [];
         } catch (error) {
             console.error('Database query error:', error);
             throw new Error('Failed to query items from database');
@@ -92,7 +90,7 @@ export class DatabaseClient {
         updateExpression: string,
         expressionAttributeValues: Record<string, NativeAttributeValue>,
         expressionAttributeNames?: Record<string, string>
-    ): Promise<KanbanItem> {
+    ): Promise<TItem> {
         try {
             const params: UpdateCommandInput = {
                 TableName: this.tableName,
@@ -107,7 +105,10 @@ export class DatabaseClient {
             }
 
             const result = await this.docClient.send(new UpdateCommand(params));
-            return result.Attributes as KanbanItem;
+            if (!result.Attributes) {
+                throw new Error('Update returned no attributes');
+            }
+            return result.Attributes as TItem;
         } catch (error) {
             console.error('Database update error:', error);
             throw new Error('Failed to update item in database');
