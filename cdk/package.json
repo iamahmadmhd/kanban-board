@@ -1,17 +1,20 @@
 {
     "name": "kanban-cdk",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "bin": {
-        "kanban-cdk": "bin/kanban-cdk.js"
+        "kanban-cdk": "out/kanban-cdk.js"
     },
     "scripts": {
-        "build": "tsc",
-        "watch": "tsc -w",
+        "build": "npx ts-node --prefer-ts-exts bin/kanban.ts",
+        "build:watch": "nodemon --exec ts-node bin/kanban.ts",
+        "cdk:bootstrap": "cdk bootstrap",
+        "cdk:synth": "cdk synth",
+        "cdk:deploy": "cdk deploy",
+        "cdk:deploy:watch": "cdk deploy --watch",
+        "cdk:destroy": "cdk destroy",
         "test": "jest",
-        "cdk": "cdk",
-        "cdk:syn": "cdk synth",
-        "dev:api": "sam local start-api --template-file cdk.out/KnabanStack.template.json",
-        "lint": "eslint .",
+        "test:watch": "jest --watch",
+        "lint": "eslint",
         "prettier:write": "prettier --write .",
         "prettier:check": "prettier --write ."
     },
@@ -37,6 +40,7 @@
         "globals": "^16.4.0",
         "jest": "^29.7.0",
         "jiti": "^2.6.0",
+        "nodemon": "^3.1.10",
         "prettier": "^3.6.2",
         "ts-jest": "^29.4.4",
         "ts-node": "^10.9.2",

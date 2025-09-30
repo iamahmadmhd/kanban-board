@@ -11,4 +11,5 @@ export default {
         '/node_modules/(?!(uuid)/)', // do not ignore uuid
     ],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+    setupFiles: ['<rootDir>/env.js'],
 };
