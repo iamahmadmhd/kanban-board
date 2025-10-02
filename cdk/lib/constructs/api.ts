@@ -20,10 +20,11 @@ export class KanbanApi extends Construct {
     constructor(scope: Construct, id: string, props: KanbanApiProps) {
         super(scope, id);
 
-        // JWT Authorizer for Cognito
-        this.authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'Authorizer', {
+        // Cognito User Pool Authorizer
+        this.authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'CognitoAuthorizer', {
             cognitoUserPools: [props.userPool],
             identitySource: 'method.request.header.Authorization',
+            authorizerName: 'CognitoAuthorizer',
         });
 
         // REST API Gateway
@@ -43,8 +44,7 @@ export class KanbanApi extends Construct {
 
         // Common Lambda environment variables
         const commonEnv = {
-            TABLE_NAME: process.env.TABLE_NAME!,
-            LOCAL_AUTH: process.env.LOCAL_AUTH!,
+            TABLE_NAME: 'KanbanTable',
         };
 
         // Lambda execution role with DynamoDB permissions
@@ -112,32 +112,31 @@ export class KanbanApi extends Construct {
     private createBoardRoutes(lambda: lambdaNodejs.NodejsFunction): void {
         const boards = this.api.root.addResource('boards');
 
-        // GET /boards - List all boards for user
         boards.addMethod('GET', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // POST /boards - Create new board
         boards.addMethod('POST', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // Board-specific routes
         const boardById = boards.addResource('{boardId}');
 
-        // GET /boards/{boardId} - Get specific board
         boardById.addMethod('GET', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // PUT /boards/{boardId} - Update board
         boardById.addMethod('PUT', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // DELETE /boards/{boardId} - Delete board
         boardById.addMethod('DELETE', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
     }
 
@@ -146,27 +145,26 @@ export class KanbanApi extends Construct {
         const boardById = boards.getResource('{boardId}') || boards.addResource('{boardId}');
         const lists = boardById.addResource('lists');
 
-        // GET /boards/{boardId}/lists - Get all lists for board
         lists.addMethod('GET', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // POST /boards/{boardId}/lists - Create new list
         lists.addMethod('POST', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // List-specific routes
         const listById = lists.addResource('{listId}');
 
-        // PUT /boards/{boardId}/lists/{listId} - Update list
         listById.addMethod('PUT', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // DELETE /boards/{boardId}/lists/{listId} - Delete list
         listById.addMethod('DELETE', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
     }
 
@@ -177,27 +175,26 @@ export class KanbanApi extends Construct {
         const listById = lists.getResource('{listId}') || lists.addResource('{listId}');
         const cards = listById.addResource('cards');
 
-        // GET /boards/{boardId}/lists/{listId}/cards - Get all cards for list
         cards.addMethod('GET', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // POST /boards/{boardId}/lists/{listId}/cards - Create new card
         cards.addMethod('POST', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // Card-specific routes
         const cardById = cards.addResource('{cardId}');
 
-        // PUT /boards/{boardId}/lists/{listId}/cards/{cardId} - Update card
         cardById.addMethod('PUT', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
 
-        // DELETE /boards/{boardId}/lists/{listId}/cards/{cardId} - Delete card
         cardById.addMethod('DELETE', new apigateway.LambdaIntegration(lambda), {
             authorizer: this.authorizer,
+            authorizationType: apigateway.AuthorizationType.COGNITO,
         });
     }
 }

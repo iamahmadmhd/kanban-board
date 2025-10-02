@@ -7,11 +7,6 @@ export class AuthUtils {
      * Supports both Cognito JWT and local development auth
      */
     static extractUserContext(event: APIGatewayProxyEvent): UserContext {
-        // Check for local development mode
-        if (process.env.LOCAL_AUTH === 'true') {
-            return this.extractLocalUser(event);
-        }
-
         // Extract from Cognito authorizer context
         return this.extractCognitoUser(event);
     }
@@ -49,23 +44,39 @@ export class AuthUtils {
         };
     }
 
+    /**
+     * Extract user context from Cognito authorizer context
+     */
     private static extractCognitoUser(event: APIGatewayProxyEvent): UserContext {
         const authorizer = event.requestContext.authorizer;
 
-        if (!authorizer || !authorizer.jwt) {
-            throw new Error('No JWT authorizer context found');
+        if (!authorizer) {
+            console.error('No authorizer context found');
+            throw new Error('No authorization context found');
         }
 
-        const claims = authorizer.jwt.claims;
+        // Cognito User Pool authorizer puts claims directly in authorizer object
+        const claims = authorizer.claims;
 
-        if (!claims?.sub) {
-            throw new Error('Invalid JWT claims - missing sub');
+        if (!claims) {
+            console.error('No claims found. Authorizer context:', JSON.stringify(authorizer, null, 2));
+            throw new Error('No claims found in authorization context');
+        }
+
+        const sub = claims.sub;
+        const email = claims.email;
+        const givenName = claims.given_name;
+        const familyName = claims.family_name;
+
+        if (!sub) {
+            console.error('Claims missing sub:', claims);
+            throw new Error('Invalid claims - missing sub');
         }
 
         return {
-            userId: claims.sub as string,
-            email: (claims.email as string) || '',
-            name: `${claims.given_name || ''} ${claims.family_name || ''}`.trim() || 'Unknown User',
+            userId: sub,
+            email: email || '',
+            name: `${givenName || ''} ${familyName || ''}`.trim() || 'Unknown User',
             isAuthenticated: true,
         };
     }

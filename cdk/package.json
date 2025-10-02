@@ -2,7 +2,7 @@
     "name": "kanban-cdk",
     "version": "1.0.0",
     "bin": {
-        "kanban-cdk": "out/kanban-cdk.js"
+        "kanban-cdk": "bin/kanban-cdk.js"
     },
     "scripts": {
         "build": "npx ts-node --prefer-ts-exts bin/kanban.ts",
@@ -12,6 +12,7 @@
         "cdk:deploy": "cdk deploy",
         "cdk:deploy:watch": "cdk deploy --watch",
         "cdk:destroy": "cdk destroy",
+        "dev:api": "sam local start-api --template-file cdk.out/KanbanStack.template.json --skip-pull-image --debug --port 3001",
         "test": "jest",
         "test:watch": "jest --watch",
         "lint": "eslint",
