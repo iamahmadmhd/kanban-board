@@ -1,5 +1,5 @@
 {
-    "name": "frontend",
+    "name": "kanban-frontend",
     "version": "0.1.0",
     "private": true,
     "scripts": {
@@ -12,6 +12,7 @@
     },
     "dependencies": {
         "next": "15.5.4",
+        "openid-client": "^6.8.1",
         "react": "19.1.0",
         "react-dom": "19.1.0"
     },
