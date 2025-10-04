@@ -21,20 +21,20 @@ export class KanbanApi extends Construct {
         super(scope, id);
 
         // Cognito User Pool Authorizer
-        this.authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'CognitoAuthorizer', {
+        this.authorizer = new apigateway.CognitoUserPoolsAuthorizer(this, 'Authorizer', {
             cognitoUserPools: [props.userPool],
             identitySource: 'method.request.header.Authorization',
-            authorizerName: 'CognitoAuthorizer',
         });
 
         // REST API Gateway
         this.api = new apigateway.RestApi(this, 'Api', {
-            restApiName: props.apiName || 'kanban-api',
-            description: 'Kanban Board API',
+            restApiName: props.apiName,
+            description: 'Kanban Board API with Cognito authentication',
             defaultCorsPreflightOptions: {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
                 allowMethods: apigateway.Cors.ALL_METHODS,
                 allowHeaders: ['Content-Type', 'Authorization'],
+                allowCredentials: true,
             },
             deployOptions: {
                 stageName: 'v1',
@@ -44,7 +44,7 @@ export class KanbanApi extends Construct {
 
         // Common Lambda environment variables
         const commonEnv = {
-            TABLE_NAME: 'KanbanTable',
+            TABLE_NAME: props.table.tableName,
         };
 
         // Lambda execution role with DynamoDB permissions
@@ -69,7 +69,6 @@ export class KanbanApi extends Construct {
                 minify: true,
                 sourceMap: false,
                 target: 'es2022',
-                forceDockerBundling: false,
             },
         });
 
@@ -84,7 +83,6 @@ export class KanbanApi extends Construct {
                 minify: true,
                 sourceMap: false,
                 target: 'es2022',
-                forceDockerBundling: false,
             },
         });
 
@@ -99,7 +97,6 @@ export class KanbanApi extends Construct {
                 minify: true,
                 sourceMap: false,
                 target: 'es2022',
-                forceDockerBundling: false,
             },
         });
 

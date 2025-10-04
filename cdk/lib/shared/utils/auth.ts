@@ -1,51 +1,17 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { UserContext, LocalAuthHeaders, LocalUserData } from '../types/auth';
+import { UserContext } from '../types/auth';
 
 export class AuthUtils {
     /**
      * Extract user context from API Gateway event
-     * Supports both Cognito JWT and local development auth
      */
     static extractUserContext(event: APIGatewayProxyEvent): UserContext {
         // Extract from Cognito authorizer context
         return this.extractCognitoUser(event);
     }
 
-    private static extractLocalUser(event: APIGatewayProxyEvent): UserContext {
-        const headers = event.headers as LocalAuthHeaders;
-        const localUser = headers['X-Local-User'] || headers['x-local-user'];
-
-        if (!localUser) {
-            throw new Error('Missing X-Local-User header in local development mode');
-        }
-
-        // Check if it's JSON format (starts with '{' or '[')
-        if (localUser.trim().startsWith('{') || localUser.trim().startsWith('[')) {
-            try {
-                const userData: LocalUserData = JSON.parse(localUser);
-                return {
-                    userId: userData.sub || 'local-user',
-                    email: userData.email || 'local@example.com',
-                    name: `${userData.given_name || 'Local'} ${userData.family_name || 'User'}`,
-                    isAuthenticated: true,
-                };
-            } catch (error) {
-                console.error('Error parsing local user JSON data:', error);
-                // Fall through to simple string handling
-            }
-        }
-
-        // Handle as simple string format
-        return {
-            userId: localUser,
-            email: `${localUser}@example.com`,
-            name: 'Local User',
-            isAuthenticated: true,
-        };
-    }
-
     /**
-     * Extract user context from Cognito authorizer context
+     * Extract user context from API Gateway event
      */
     private static extractCognitoUser(event: APIGatewayProxyEvent): UserContext {
         const authorizer = event.requestContext.authorizer;

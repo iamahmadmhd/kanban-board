@@ -1,4 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import { KanbanDynamoDB } from './constructs/dynamodb';
 import { KanbanCognito } from './constructs/cognito';
@@ -12,17 +13,31 @@ export class KanbanStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
+        // Get frontend URLs from context or environment
+        const frontendUrlParam = ssm.StringParameter.fromStringParameterName(
+            this,
+            'FrontendUrlParam',
+            '/kanban/frontend-url'
+        );
+        const frontendUrl = frontendUrlParam.stringValue;
+
+        const callbackUrls = [`${frontendUrl}/api/auth/callback/cognito`, frontendUrl];
+
+        const logoutUrls = [`${frontendUrl}/login`, frontendUrl];
+
         // Database infrastructure
         this.database = new KanbanDynamoDB(this, 'Database', {
             tableName: 'KanbanTable',
-            removalPolicy: cdk.RemovalPolicy.DESTROY, // For development
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
         // Authentication infrastructure
         this.auth = new KanbanCognito(this, 'Auth', {
             userPoolName: 'kanban-user-pool',
             clientName: 'kanban-web-client',
-            removalPolicy: cdk.RemovalPolicy.DESTROY, // For development
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            callbackUrls,
+            logoutUrls,
         });
 
         // API Gateway with Lambda functions
@@ -57,6 +72,12 @@ export class KanbanStack extends cdk.Stack {
             exportName: `${this.stackName}-UserPoolClientId`,
         });
 
+        new cdk.CfnOutput(this, 'CognitoHostedUiUrl', {
+            value: this.auth.hostedUiUrl,
+            description: 'Cognito Hosted UI URL',
+            exportName: `${this.stackName}-CognitoHostedUiUrl`,
+        });
+
         new cdk.CfnOutput(this, 'UserPoolDomain', {
             value: `${this.auth.userPool.userPoolId}.auth.${this.region}.amazoncognito.com`,
             description: 'Cognito User Pool Domain',
@@ -67,6 +88,12 @@ export class KanbanStack extends cdk.Stack {
             value: this.api.api.url,
             description: 'API Gateway URL',
             exportName: `${this.stackName}-ApiUrl`,
+        });
+
+        new cdk.CfnOutput(this, 'Region', {
+            value: this.region,
+            description: 'AWS Region',
+            exportName: `${this.stackName}-Region`,
         });
     }
 }
