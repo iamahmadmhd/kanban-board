@@ -13,4 +13,3 @@ cdk.out
 # ENV
 .env*
 !*.example
-!env.js
