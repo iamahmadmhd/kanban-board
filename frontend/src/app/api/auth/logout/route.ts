@@ -29,8 +29,6 @@ export async function GET(request: NextRequest) {
         logout_uri: clientConfig.logoutRedirectUri,
     });
 
-    console.log({ endSessionUrl });
-
     // Destroy the session in Redis
     await destroySession(sidCookie);
 
