@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionById, updateSession, destroySession } from '@/lib/session';
 import { clientConfig, getCognitoDomain, getIssuerBaseUrl, getJwksUri } from '@/lib/auth';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
+import { config } from '@/lib/config';
 
 async function extractParams(request: NextRequest): Promise<Record<string, string>> {
     const url = new URL(request.url);
@@ -77,6 +78,8 @@ export async function GET(request: NextRequest) {
 
     const tokenJson = await tokenRes.json();
     const { access_token, id_token, refresh_token } = tokenJson;
+    const now = Math.floor(Date.now() / 1000);
+    const tokenExpiry = now + (tokenJson.expires_in || 3600);
 
     // Verify ID token signature and nonce
     try {
@@ -90,6 +93,7 @@ export async function GET(request: NextRequest) {
                 accessToken: access_token,
                 idToken: id_token,
                 refreshToken: refresh_token,
+                tokenExpiry: tokenExpiry,
                 userInfo: {
                     sub: claims.sub as string,
                     email: claims.email as string,
@@ -98,7 +102,7 @@ export async function GET(request: NextRequest) {
                     picture: claims.picture as string,
                 },
             },
-            60 * 60 * 24 * 7 // 7 days
+            config.sessionTtl
         );
     } catch (err) {
         console.error('ID token verification failed:', err);
@@ -114,7 +118,7 @@ export async function GET(request: NextRequest) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: config.sessionTtl,
     });
 
     return res;

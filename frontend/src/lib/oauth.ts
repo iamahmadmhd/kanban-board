@@ -1,4 +1,3 @@
-// lib/oauth.ts
 import crypto from 'crypto';
 
 export function base64url(input: Buffer) {

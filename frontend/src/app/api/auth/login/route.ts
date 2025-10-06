@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import {
     generateCodeVerifier,
     generateCodeChallenge,
@@ -7,8 +7,9 @@ import {
 } from '@/lib/oauth';
 import { createSession } from '@/lib/session';
 import { clientConfig, getCognitoDomain } from '@/lib/auth';
+import { config } from '@/lib/config';
 
-export async function GET(_: NextRequest) {
+export async function GET() {
     const verifier = generateCodeVerifier();
     const challenge = await generateCodeChallenge(verifier);
     const state = generateState();
@@ -39,7 +40,7 @@ export async function GET(_: NextRequest) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 300,
+        maxAge: config.sessionTtl,
     });
 
     return res;
