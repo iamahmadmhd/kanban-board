@@ -1,8 +1,26 @@
 import crypto from 'crypto';
 import { getRedis } from './redis';
 import { cookies } from 'next/headers';
-import { SessionData } from '@/hooks/use-session';
 import { getValidAccessToken } from './auth';
+
+export interface SessionData {
+    isLoggedIn?: boolean;
+    accessToken?: string;
+    idToken?: string;
+    refreshToken?: string;
+    tokenExpiry?: number;
+    userInfo?: {
+        sub: string;
+        email: string;
+        firstname: string;
+        lastname: string;
+        picture?: string;
+    };
+    verifier?: string;
+    state?: string;
+    nonce?: string;
+    createdAt?: number;
+}
 
 const PREFIX = 'sess:';
 function genId() {
@@ -11,16 +29,16 @@ function genId() {
 
 export async function createSession(data: Record<string, unknown>, ttlSeconds = 300) {
     const id = genId();
-    const r = await getRedis();
-    await r.set(PREFIX + id, JSON.stringify(data), { EX: ttlSeconds });
+    const r = getRedis();
+    await r.set(PREFIX + id, JSON.stringify(data), { ex: ttlSeconds });
     return id;
 }
 
 export async function getSessionById(id: string | undefined) {
     if (!id) return null;
-    const r = await getRedis();
-    const raw = await r.get(PREFIX + id);
-    return raw ? JSON.parse(raw) : null;
+    const r = getRedis();
+    const raw = await r.get<SessionData>(PREFIX + id);
+    return raw ?? null;
 }
 
 export async function updateSession(
@@ -28,12 +46,12 @@ export async function updateSession(
     data: Record<string, unknown>,
     ttlSeconds = 60 * 60 * 24 * 7
 ) {
-    const r = await getRedis();
-    await r.set(PREFIX + id, JSON.stringify(data), { EX: ttlSeconds });
+    const r = getRedis();
+    await r.set(PREFIX + id, JSON.stringify(data), { ex: ttlSeconds });
 }
 
 export async function destroySession(id: string) {
-    const r = await getRedis();
+    const r = getRedis();
     await r.del(PREFIX + id);
 }
 

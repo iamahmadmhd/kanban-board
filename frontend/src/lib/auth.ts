@@ -85,11 +85,10 @@ export async function getValidAccessToken(sessionId: string): Promise<string | n
 
     // If token is still valid (with buffer), return it
     if (tokenExpiry > now + config.tokenRefreshBuffer) {
-        return session.idToken;
+        return session.idToken ?? null;
     }
 
     // Token expired or about to expire - refresh it
-    console.log('Refreshing access token for session:', sessionId);
     const newTokens = await refreshAccessToken(session.refreshToken);
 
     if (!newTokens) {
