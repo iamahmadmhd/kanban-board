@@ -80,13 +80,14 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Cognito Configuration (from CDK outputs)
 NEXT_PUBLIC_COGNITO_DOMAIN=https://kanban-{account}.auth.{region}.amazoncognito.com
 NEXT_PUBLIC_COGNITO_ISSUER_URL=https://cognito-idp.{region}.amazonaws.com/{userPoolId}
-NEXT_PUBLIC_COGNITO_CLIENT_ID=your-client-id
+NEXT_PUBLIC_COGNITO_CLIENT_ID=YOUR_COGNITO_CLIENT_ID
 
 # OAuth Scopes
-NEXT_PUBLIC_SCOPE=openid profile email
+NEXT_PUBLIC_SCOPE="openid profile email"
 
-# Redis URL
-REDIS_URL=redis://localhost:6379
+# Upstash Redis URL
+UPSTASH_REDIS_REST_URL=YOUR_UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN=YOUR_UPSTASH_REDIS_REST_TOKEN
 ```
 
 ## Deployment
